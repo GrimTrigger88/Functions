@@ -43,29 +43,29 @@ NewObs <- tail(IrisVariables,5)
   
 predict(PCAModel, newdata=NewObs)
 
-# Better Biplot Function
+# Better Biplot Function - PC is a princomp object
 
-PCBiplot <- function(PC, x="PC1", y="PC2", colors=c('black', 'black', 'red', 'red')) {
-                # Where PC is a prcomp object
-                PCData <- data.frame(PC$rotation) %>%
-                            mutate(ObsNames = rownames(.))
-  
-                #data <- data.frame(obsnames=row.names(PC$x), PC$x)
+PCBiplot <- function(PC, TextColor = c('black'), LineColor = c('red')){
                 
-                plot <- ggplot(PCData, aes_string(x=x, y=y)) + geom_text(alpha=.4, size=3, aes(label=obsnames), color=colors[1]) + 
-                        geom_hline(aes(0), size=.2) + geom_vline(aes(0), size=.2, color=colors[2])
-                datapc <- data.frame(varnames=rownames(PC$rotation), PC$rotation)
-                mult <- min(
-                  (max(data[,y]) - min(data[,y])/(max(datapc[,y])-min(datapc[,y]))),
-                  (max(data[,x]) - min(data[,x])/(max(datapc[,x])-min(datapc[,x])))
-                )
-                datapc <- transform(datapc,
-                                    v1 = .7 * mult * (get(x)),
-                                    v2 = .7 * mult * (get(y))
-                )
-                plot <- plot + coord_equal() + geom_text(data=datapc, aes(x=v1, y=v2, label=varnames), size = 5, vjust=1, color=colors[3])
-                plot <- plot + geom_segment(data=datapc, aes(x=0, y=0, xend=v1, yend=v2), arrow=arrow(length=unit(0.2,"cm")), alpha=0.75, color=colors[4])
-                plot
+                .e <- environment()
+  
+                Observations <- data.frame(PC$x) %>%
+                                  mutate(ObsNames = rownames(.))         
+  
+                PCData <- data.frame(PC$rotation) %>%
+                            mutate(FacetNames = rownames(.),
+                                   VectorMultiplier = min((max(Observations$PC1) - min(Observations$PC1)/(max(PC1)-min(PC1))), (max(Observations$PC2) - min(Observations$PC2)/(max(PC2)-min(PC2)))),
+                                   Vector1 = .7 * VectorMultiplier * PC1,
+                                   Vector2 = .7 * VectorMultiplier * PC2)
+                
+              ggplot(data = Observations, aes(x = PC1, y = PC2), environment = .e) + 
+                geom_text(alpha = .4, size = 3, aes(label = ObsNames), color = TextColor) + 
+                geom_hline(yintercept = 0, size=.2) + 
+                geom_vline(xintercept = 0, size=.2, color = TextColor) +
+                coord_equal() + 
+                geom_text(data = PCData, aes(x = Vector1, y = Vector2, label = FacetNames), size = 4, vjust = 1, color = LineColor) +
+                geom_segment(data = PCData, aes(x = 0, y = 0, xend = Vector1, yend = Vector2), arrow = arrow(length = unit(0.2,"cm")), alpha = 0.75, color = LineColor)
+                
 }
 
 PCBiplot(PCAModel)
