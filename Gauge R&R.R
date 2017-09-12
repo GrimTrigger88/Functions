@@ -12,11 +12,6 @@ SurveyData <- data.frame(Participant = c(rep(1, 100), rep(2, 100), rep(3, 100), 
                          Question = seq(1, 100, 1),
                          Response = round(runif(500,1,5), 0))
 
-SurveyData <- data.frame(Participant = c(1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2),
-                         Theme = c(1,1,2,2,3,3,4,4,5,5,1,1,2,2,3,3,4,4,5,5),
-                         Question = seq(1,2,1),
-                         Response = c(-2.599,-18.21,-15.218,3.105,-.272,-2.586,2.54,-10.616,-15.743,-2.958,-5.528,1.566,-3.805,5.464,6.756,-9.071,11.635,-11.929,8.022,-7.669))
-
 # Notes:
 # In this case, the themes are equivalent to "parts" from traditional R&R,
 # the participants are the "operators", and the questions are the "readings".
@@ -25,7 +20,7 @@ SurveyData <- data.frame(Participant = c(1,1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2,2,2
 
 Parts <- length(unique(SurveyData$Theme))
 Operators <- length(unique(SurveyData$Participant))
-Readings <- 2
+Readings <- 5
 
 DFpart <- Parts - 1
 DFoperator <- Operators - 1
