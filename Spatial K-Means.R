@@ -27,7 +27,6 @@ require(cluster)
 ### 01026	42.4633	-72.9202
 ### 01027	42.2668	-72.669
 
-ZipCodes <- read.xlsx("C:\\Users\\kblv991\\Desktop\\ZipCodes.xlsx", 1)
 
 GeoCluster <<- function(LatLon, Clusters){ # Any size data frame with two columns named Lat and Lon 
   
