@@ -66,6 +66,7 @@ GeoCluster <<- function(LatLon, Clusters, ObservationCount=NULL){
 
 ClusterData <- GeoCluster(ZipCodes, 3, "Observations")
 
+
 # Plot Clustered Points
 ggplot(data = ClusterData, aes(Lon, Lat, color = factor(Cluster))) + geom_point() 
 
