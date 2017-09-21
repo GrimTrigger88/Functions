@@ -4,6 +4,7 @@ require(tidyverse)
 require(reshape2)
 require(geosphere)
 require(cluster)
+require(openxlsx)
 
 #     Sample Data In ZipCodes
 ### ZipCode	Lat	Lon
@@ -27,15 +28,18 @@ require(cluster)
 ### 01026	42.4633	-72.9202
 ### 01027	42.2668	-72.669
 
-ZipCodes <- read.xlsx("C:\\Users\\kblv991\\Desktop\\ZipCodes.xlsx", 1)
-
-GeoCluster <<- function(LatLon, Clusters){ # Any size data frame with two columns named Lat and Lon 
+# Any size data frame with columns named Lat and Lon with a column indicating observation counts
+GeoCluster <<- function(LatLon, Clusters, ObservationCount=NULL){  
   
   if(!("Lat" %in% colnames(LatLon) & "Lon" %in% colnames(LatLon))){
     stop("Data frame must have columns named 'Lat' and 'Lon' for latitude and longitude")
   }
   if(missing(Clusters)){
     stop("Please enter the number of clusters")
+  }
+  if(!is.null(ObservationCount)){
+    ObservationIndex <- which(colnames(LatLon)==as.character(ObservationCount))
+    LatLon <- LatLon[rep(row.names(LatLon), LatLon[,ObservationIndex]),]
   }
   
   Data <- LatLon %>% 
@@ -54,11 +58,13 @@ GeoCluster <<- function(LatLon, Clusters){ # Any size data frame with two column
                   dplyr::select(-Var1)
   
   #Partition around medoids (pam) approximates K-Means for dissimilarity (distance) matrices
+  #
   LatLon %>% 
-    mutate(Cluster = pam(DistMatrix, Clusters, diss = TRUE)$clustering)
+    mutate(Cluster = pam(DistMatrix, Clusters, diss = TRUE)$clustering) %>%
+    unique()
 }
 
-ClusterData <- GeoCluster(ZipCodes, 3)
+ClusterData <- GeoCluster(ZipCodes, 3, "Observations")
 
 # Plot Clustered Points
 ggplot(data = ClusterData, aes(Lon, Lat, color = factor(Cluster))) + geom_point() 
