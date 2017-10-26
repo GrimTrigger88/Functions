@@ -1,0 +1,81 @@
+---- Stored Procdeure: Generic Semantic View Creation For Applications
+-----------------------------------------------------------------
+CREATE Procedure [dbo].[SemanticView] @UniqueView nvarchar(255), 
+									@FulltextIndexColumn nvarchar(255), 
+									@ExistingData nvarchar(255), 
+									@ExistingDataColumn nvarchar(255),
+									@OptionalIndexDistinction nvarchar(255)
+AS
+BEGIN
+--Relies on application creating a table to reference
+
+DECLARE @query nvarchar(MAX)
+SET @query = N' IF OBJECT_ID (' + @UniqueView + ', ''view'') IS NOT NULL  
+				DROP VIEW ' + @UniqueView + ' ;  
+				GO  
+				CREATE VIEW ' + @UniqueView + '  
+				WITH SCHEMABINDING  
+				AS  
+
+				SELECT ' + @ExistingDataColumn + '
+				FROM ' + @ExistingData + ';
+
+				GO  
+				CREATE UNIQUE CLUSTERED INDEX IDX   
+					ON ' + @UniqueView + ' (' + @FulltextIndexColumn + ');  
+				GO  '
+
+EXECUTE sp_executesql @query
+
+--Ensure Fulltext Catalog exists in database
+DECLARE @IndexCheck int
+SET @IndexCheck = (SELECT COUNT(*) from sys.fulltext_catalogs)
+
+IF(@IndexCheck = 0)
+	CREATE FULLTEXT CATALOG DefaultCatalog AS DEFAULT;  
+
+SET @query = N'CREATE FULLTEXT INDEX ON ' + @UniqueView + ' (' + @FulltextIndexColumn + ')   
+				   KEY INDEX IDX   
+				   WITH STOPLIST = SYSTEM'
+
+EXECUTE sp_executesql @query			
+
+END
+
+---- Function: Create Similarity Details Table (Cross Applied)
+-----------------------------------------------------------------
+CREATE FUNCTION [dbo].[CreateSimilarityDetailsTable](@PrimaryID int, @MatchID int)
+
+RETURNS @SDT table (
+Keyphrase nvarchar(255)
+, Score float
+)
+AS BEGIN
+
+INSERT INTO @SDT
+SELECT SSDT.Keyphrase, SSDT.Score
+FROM SEMANTICSIMILARITYDETAILSTABLE
+		(dbo.GenericTextTable, TextField, @PrimaryID, TextField, @MatchID) AS SSDT
+ORDER BY SSDT.score DESC
+
+Return
+END;
+
+---- Function: Generate Table of Indexed Matches and Match Scores Among Compared Columns
+-----------------------------------------------------------------
+CREATE FUNCTION [dbo].[CreateSimilarityTable](@ID nvarchar(5))
+
+RETURNS @SS table (
+SourceColumn int,
+MatchColumn int,
+MatchDocumentKey int,
+Score float
+)
+AS BEGIN
+
+INSERT INTO @SS(SourceColumn, MatchColumn, MatchDocumentKey, Score)
+SELECT source_column_id, matched_column_id, matched_document_key, score
+FROM SEMANTICSIMILARITYTABLE(dbo.GenericTextTable, TextField, @ID)
+
+RETURN
+END;
